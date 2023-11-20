@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maths Bot</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+
+    <script>
+
+        $().ready(()=>{
+            console.log($("#response"))
+        })
+
+        function askQuestion(value) {
+
+            $("#submitBttn")[0].value = "Processing..."
+            $("#submitBttn")[0].disabled = true
+
+            $.ajax({
+                url: "http://localhost:11434/api/generate",
+                type: "POST",
+                data: JSON.stringify(
+                    {
+                        model: "llama2",
+                        prompt: `You are a math tutor. Please explain how to solve the following math problem: ${value}`
+                    }
+                ),
+                contentType: "application/json",
+                complete: function(data) {
+                    let encoded_response = data.responseText.replace('\\n', '%0a');
+                    let chunks = encoded_response.split('\n');
+                    chunks.pop();
+
+                    let final = "";
+                    for(let i = 0; i < chunks.length; i++) {
+                        let parsed = JSON.parse(chunks[i])
+                        final = final + parsed.response;
+                    }
+                    final = final.replace("%0a", "\n");
+                    console.log(final)
+                    $("#response")[0].textContent = final;
+
+                    $("#submitBttn")[0].value = "Calculate"
+                    $("#submitBttn")[0].disabled = false
+                }
+            });
+        }
+
+        function onFormSubmit(event) {
+            event.preventDefault();
+
+            const problem = $("#problem")[0].value;
+            
+            askQuestion(problem);
+        }
+
+    </script>
+</head>
+<body>
+    <section class="hero is-info">
+        <div class="hero-body">
+            <h1 class="is-size-3">AI Mathdroid 🤖 Bot!</h1>
+        </div>
+    </section>
+
+    <section class="section">
+        <div>
+            <h4 class="is-size-5">Got any maths problems???</h4>
+            <br>
+            <form onsubmit="onFormSubmit(event)">
+                <!--<div class="field">
+                    <label class="label">First Number</label>
+                    <div class="control">
+                        <input class="input" id="num1" type="number" placeholder="Enter your first number" required>
+                    </div>
+                </div>-->
+
+                <div class="field">
+                    <label class="label">Maths Question:</label>
+                    <div class="control">
+                        <input class="input" id="problem" type="text" placeholder="Enter your math problem here" required>
+                    </div>
+                </div>
+                <div class="control">
+                    <input type="submit" id="submitBttn" class="button is-link" value="Calculate"/>
+                </div>
+                <small>It takes a couple minutes to process... Don't worry it will get there!!!</small>
+            </form>
+        </div>
+    </section>
+    <hr>
+    <section class="section">
+        <p id="response"></p>
+    </section>
+</body>
+</html>
